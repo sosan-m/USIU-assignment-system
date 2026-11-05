@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Register - USIU Assignment System{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 2rem auto;">
+    <div class="card-header">Student / Instructor Registration</div>
+    <form method="POST">
+        <div class="form-group">
+            <label for="full_name">Full Name</label>
+            <input type="text" id="full_name" name="full_name" required>
+        </div>
+        <div class="form-group">
+            <label for="email">USIU Email</label>
+            <input type="email" id="email" name="email" required placeholder="e.g., user@usiu.ac.ke">
+        </div>
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required minlength="6">
+        </div>
+        <div class="form-group">
+            <label for="role">Account Type</label>
+            <select id="role" name="role" required onchange="toggleFields()">
+                <option value="">Select Role</option>
+                <option value="student">Student</option>
+                <option value="instructor">Instructor</option>
+            </select>
+        </div>
+        <div class="form-group" id="department_field" style="display:none;">
+            <label for="department">Department</label>
+            <input type="text" id="department" name="department" value="Computing and Informatics">
+        </div>
+        <div class="form-group" id="student_id_field" style="display:none;">
+            <label for="student_id">Student ID</label>
+            <input type="text" id="student_id" name="student_id">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Register Account</button>
+    </form>
+</div>
+<script>
+function toggleFields() {
+    const role = document.getElementById('role').value;
+    document.getElementById('department_field').style.display = (role) ? 'block' : 'none';
+    document.getElementById('student_id_field').style.display = (role === 'student') ? 'block' : 'none';
+}
+</script>
+{% endblock %}

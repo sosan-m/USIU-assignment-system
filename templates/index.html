@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="hero">
+    <h1>USIU-Africa Online Assignment System</h1>
+    <p>School of Science and Technology – Department of Computing and Informatics</p>
+    <div class="hero-buttons" style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+        <a href="{{ url_for('login') }}" class="btn btn-primary">Login to Portal</a>
+        <a href="{{ url_for('register') }}" class="btn btn-secondary">Create Account</a>
+    </div>
+</div>
+{% endblock %}
