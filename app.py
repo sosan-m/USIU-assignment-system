@@ -151,6 +151,39 @@ def logout():
     flash('Logged out successfully', 'success')
     return redirect(url_for('index'))
 
+@app.route('/lecturer/dashboard')
+def instructor_dashboard():
+
+    if 'user_id' not in session or session.get('role') != 'instructor':
+        flash('Please log in as a lecturer.', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db()
+
+    courses = conn.execute(
+        'SELECT * FROM courses WHERE instructor_id = ?',
+        (session['user_id'],)
+    ).fetchall()
+
+    assignments = conn.execute('''
+        SELECT a.*, c.course_code,
+        COUNT(s.id) AS submission_count
+        FROM assignments a
+        JOIN courses c ON a.course_id = c.id
+        LEFT JOIN submissions s ON a.id = s.assignment_id
+        WHERE c.instructor_id = ?
+        GROUP BY a.id
+        ORDER BY a.created_at DESC
+    ''', (session['user_id'],)).fetchall()
+
+    conn.close()
+
+    return render_template(
+        'lecturer_dashboard.html',
+        courses=courses,
+        assignments=assignments
+    )
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, host='0.0.0.0', port=5000)

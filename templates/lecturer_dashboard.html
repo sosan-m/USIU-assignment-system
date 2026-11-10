@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Lecturer Dashboard - USIU-Africa{% endblock %}
+
+{% block content %}
+
+<div class="dashboard-header">
+    <div>
+        <h1>Lecturer Dashboard</h1>
+        <p>Welcome back, {{ session.get('full_name') }}!</p>
+        <span>Manage your courses, assignments and student submissions.</span>
+    </div>
+
+    <a href="#" class="btn btn-secondary">+ Create Assignment</a>
+</div>
+
+<div class="dashboard-grid">
+
+    <div class="dashboard-card">
+        <h3>My Courses</h3>
+        <p class="dashboard-number">{{ courses|length }}</p>
+        <span>Assigned courses</span>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>My Assignments</h3>
+        <p class="dashboard-number">{{ assignments|length }}</p>
+        <span>Published assignments</span>
+    </div>
+
+    <div class="dashboard-card">
+        <h3>Total Submissions</h3>
+        <p class="dashboard-number">
+            {{ assignments|sum(attribute='submission_count') }}
+        </p>
+        <span>Student submissions received</span>
+    </div>
+
+</div>
+
+<div class="card">
+
+    <div class="card-header">
+        My Courses
+    </div>
+
+    {% if courses %}
+
+    <div class="course-list">
+        {% for course in courses %}
+
+        <div class="course-item">
+            <h3>{{ course.course_code }}</h3>
+            <p>{{ course.course_name }}</p>
+            <small>{{ course.department }}</small>
+        </div>
+
+        {% endfor %}
+    </div>
+
+    {% else %}
+
+    <p class="empty-message">You currently have no assigned courses.</p>
+
+    {% endif %}
+
+</div>
+
+<div class="card">
+
+    <div class="card-header">
+        Assignment Management
+    </div>
+
+    {% if assignments %}
+
+    <div class="table-wrapper">
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Assignment</th>
+                    <th>Course</th>
+                    <th>Due Date</th>
+                    <th>Total Marks</th>
+                    <th>Submissions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for assignment in assignments %}
+
+                <tr>
+                    <td>{{ assignment.title }}</td>
+                    <td>{{ assignment.course_code }}</td>
+                    <td>{{ assignment.due_date }}</td>
+                    <td>{{ assignment.total_marks }}</td>
+                    <td>{{ assignment.submission_count }}</td>
+                </tr>
+
+                {% endfor %}
+            </tbody>
+
+        </table>
+
+    </div>
+
+    {% else %}
+
+    <p class="empty-message">
+        No assignments have been posted yet.
+    </p>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
