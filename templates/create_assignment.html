@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Create Assignment - USIU-Africa{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <div class="card-header">Create New Assignment</div>
+
+    {% if courses %}
+
+    <form method="POST">
+
+        <div class="form-group">
+            <label>Assignment Title</label>
+            <input type="text" name="title" placeholder="Enter assignment title" required>
+        </div>
+
+        <div class="form-group">
+            <label>Description</label>
+            <textarea name="description" rows="5"
+                placeholder="Enter assignment instructions"
+                required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Select Course</label>
+            <select name="course_id" required>
+                <option value="">Choose a course</option>
+
+                {% for course in courses %}
+                <option value="{{ course.id }}">
+                    {{ course.course_code }} - {{ course.course_name }}
+                </option>
+                {% endfor %}
+
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Due Date</label>
+            <input type="date" name="due_date" required>
+        </div>
+
+        <div class="form-group">
+            <label>Total Marks</label>
+            <input type="number" name="total_marks"
+                min="1" value="100" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Create Assignment
+        </button>
+
+        <a href="{{ url_for('instructor_dashboard') }}"
+           class="btn btn-secondary">Cancel</a>
+
+    </form>
+
+    {% else %}
+
+    <p>You need to have an assigned course before creating an assignment.</p>
+
+    {% endif %}
+</div>
+
+{% endblock %}

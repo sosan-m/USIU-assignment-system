@@ -154,6 +154,7 @@ def logout():
 @app.route('/lecturer/dashboard')
 def instructor_dashboard():
 
+
     if 'user_id' not in session or session.get('role') != 'instructor':
         flash('Please log in as a lecturer.', 'error')
         return redirect(url_for('login'))
@@ -183,6 +184,56 @@ def instructor_dashboard():
         courses=courses,
         assignments=assignments
     )
+
+@app.route('/lecturer/assignments/create', methods=['GET', 'POST'])
+def create_assignment():
+    if 'user_id' not in session or session.get('role') != 'instructor':
+        flash('Please log in as a lecturer.', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db()
+
+    courses = conn.execute(
+        'SELECT * FROM courses WHERE instructor_id = ?',
+        (session['user_id'],)
+    ).fetchall()
+
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        course_id = request.form['course_id']
+        due_date = request.form['due_date']
+        total_marks = request.form['total_marks']
+
+        course = conn.execute(
+            'SELECT id FROM courses WHERE id = ? AND instructor_id = ?',
+            (course_id, session['user_id'])
+        ).fetchone()
+
+        if not course:
+            conn.close()
+            flash('Please select a valid course.', 'error')
+            return redirect(url_for('create_assignment'))
+
+        conn.execute('''
+            INSERT INTO assignments
+            (title, description, course_id, due_date, total_marks)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (title, description, course_id, due_date, total_marks))
+
+        conn.commit()
+        conn.close()
+
+        flash('Assignment created successfully!', 'success')
+        return redirect(url_for('instructor_dashboard'))
+
+    conn.close()
+
+    return render_template(
+        'create_assignment.html',
+        courses=courses
+    )
+    
 
 if __name__ == '__main__':
     init_db()
