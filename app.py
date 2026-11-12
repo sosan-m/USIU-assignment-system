@@ -272,6 +272,64 @@ def view_submissions(assignment_id):
         assignment=assignment,
         submissions=submissions
     )
+
+@app.route('/lecturer/submissions/<int:submission_id>/grade', methods=['GET', 'POST'])
+def grade_submission(submission_id):
+
+    if 'user_id' not in session or session.get('role') != 'instructor':
+        flash('Please log in as a lecturer.', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db()
+
+    submission = conn.execute('''
+        SELECT s.*, u.full_name, u.student_id, u.email,
+               a.title, a.total_marks, a.id AS assignment_id,
+               c.course_code
+        FROM submissions s
+        JOIN users u ON s.student_id = u.id
+        JOIN assignments a ON s.assignment_id = a.id
+        JOIN courses c ON a.course_id = c.id
+        WHERE s.id = ? AND c.instructor_id = ?
+    ''', (submission_id, session['user_id'])).fetchone()
+
+    if not submission:
+        conn.close()
+        flash('Submission not found.', 'error')
+        return redirect(url_for('instructor_dashboard'))
+
+    if request.method == 'POST':
+        try:
+            grade = int(request.form['grade'])
+            feedback = request.form.get('feedback', '')
+
+            if grade < 0 or grade > submission['total_marks']:
+                flash('Grade must be within the assignment marks.', 'error')
+            else:
+                conn.execute('''
+                    UPDATE submissions
+                    SET grade = ?, feedback = ?, status = 'graded'
+                    WHERE id = ?
+                ''', (grade, feedback, submission_id))
+
+                conn.commit()
+                conn.close()
+
+                flash('Grade saved successfully!', 'success')
+                return redirect(url_for(
+                    'view_submissions',
+                    assignment_id=submission['assignment_id']
+                ))
+
+        except ValueError:
+            flash('Please enter a valid grade.', 'error')
+
+    conn.close()
+
+    return render_template(
+        'grade_submission.html',
+        submission=submission
+    )
     
 
 if __name__ == '__main__':
