@@ -233,6 +233,45 @@ def create_assignment():
         'create_assignment.html',
         courses=courses
     )
+
+@app.route('/lecturer/assignments/<int:assignment_id>/submissions')
+def view_submissions(assignment_id):
+
+    if 'user_id' not in session or session.get('role') != 'instructor':
+        flash('Please log in as a lecturer.', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db()
+
+    # Check that this assignment belongs to the logged-in lecturer
+    assignment = conn.execute('''
+        SELECT a.*, c.course_code, c.course_name
+        FROM assignments a
+        JOIN courses c ON a.course_id = c.id
+        WHERE a.id = ? AND c.instructor_id = ?
+    ''', (assignment_id, session['user_id'])).fetchone()
+
+    if not assignment:
+        conn.close()
+        flash('Assignment not found.', 'error')
+        return redirect(url_for('instructor_dashboard'))
+
+    # Retrieve submissions for this assignment
+    submissions = conn.execute('''
+        SELECT s.*, u.full_name, u.student_id, u.email
+        FROM submissions s
+        JOIN users u ON s.student_id = u.id
+        WHERE s.assignment_id = ?
+        ORDER BY s.submitted_at DESC
+    ''', (assignment_id,)).fetchall()
+
+    conn.close()
+
+    return render_template(
+        'view_submissions.html',
+        assignment=assignment,
+        submissions=submissions
+    )
     
 
 if __name__ == '__main__':

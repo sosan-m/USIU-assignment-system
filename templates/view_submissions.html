@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}View Submissions - USIU-Africa{% endblock %}
+
+{% block content %}
+
+<div class="card">
+    <div class="card-header">Student Submissions</div>
+
+    <h3>{{ assignment.title }}</h3>
+    <p>{{ assignment.course_code }} - {{ assignment.course_name }}</p>
+    <p>Due Date: {{ assignment.due_date }}</p>
+    <br>
+
+    {% if submissions %}
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Student ID</th>
+                    <th>Email</th>
+                    <th>Submission Date</th>
+                    <th>Status</th>
+                    <th>Grade</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for submission in submissions %}
+                <tr>
+                    <td>{{ submission.full_name }}</td>
+                    <td>{{ submission.student_id or 'N/A' }}</td>
+                    <td>{{ submission.email }}</td>
+                    <td>{{ submission.submitted_at }}</td>
+                    <td>{{ submission.status }}</td>
+                    <td>
+                        {{ submission.grade if submission.grade is not none else 'Not graded' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+
+    <p class="empty-message">
+        No students have submitted this assignment yet.
+    </p>
+
+    {% endif %}
+
+    <br>
+
+    <a href="{{ url_for('instructor_dashboard') }}"
+       class="btn btn-secondary">
+        Back to Dashboard
+    </a>
+
+</div>
+
+{% endblock %}
