@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime
+from functools import wraps
 import sqlite3
 import os
 
@@ -145,7 +146,119 @@ def register():
     
     return render_template('register.html')
 
-@app.route('/logout')
+
+    def student_required(view):
+    """Allow only logged-in students to access a route."""
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        if 'user_id' not in session:
+            flash('Please login first', 'error')
+            return redirect(url_for('login'))
+        if session.get('role') != 'student':
+            flash('Students only', 'error')
+            return redirect(url_for('index'))
+        return view(*args, **kwargs)
+    return wrapped
+
+def parse_due_date(value):
+    """Parse a due date stored as 'YYYY-MM-DD' or 'YYYY-MM-DDTHH:MM'."""
+    for fmt in ('%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M', '%Y-%m-%d'):
+        try:
+            parsed = datetime.strptime(value, fmt)
+            if fmt == '%Y-%m-%d':
+                parsed = parsed.replace(hour=23, minute=59)
+            return parsed
+        except (ValueError, TypeError):
+            continue
+    return None
+
+@app.route('/student/dashboard')
+@student_required
+def student_dashboard():
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT a.id, a.title, a.description, a.due_date, a.total_marks,
+               c.course_code, c.course_name,
+               s.id AS submission_id, s.submitted_at, s.grade, s.status
+        FROM assignments a
+        JOIN courses c ON a.course_id = c.id
+        LEFT JOIN submissions s
+               ON s.assignment_id = a.id AND s.student_id = ?
+        ORDER BY a.due_date ASC
+    """, (session['user_id'],)).fetchall()
+    conn.close()
+
+    now = datetime.now()
+    assignments = []
+    for row in rows:
+        due = parse_due_date(row['due_date'])
+        assignment = dict(row)
+        assignment['is_overdue'] = bool(due and now > due)
+        assignments.append(assignment)
+    return render_template('student_dashboard.html', assignments=assignments)
+
+@app.route('/student/submit/<int:assignment_id>', methods=['GET', 'POST'])
+@student_required
+def submit_assignment(assignment_id):
+    conn = get_db()
+    assignment = conn.execute("""
+        SELECT a.*, c.course_code, c.course_name
+        FROM assignments a JOIN courses c ON a.course_id = c.id
+        WHERE a.id = ?
+    """, (assignment_id,)).fetchone()
+
+    if not assignment:
+        conn.close()
+        flash('Assignment not found', 'error')
+        return redirect(url_for('student_dashboard'))
+
+    existing = conn.execute(
+        'SELECT id FROM submissions WHERE assignment_id = ? AND student_id = ?',
+        (assignment_id, session['user_id'])
+    ).fetchone()
+    due = parse_due_date(assignment['due_date'])
+    past_due = bool(due and datetime.now() > due)
+
+    if request.method == 'POST':
+        if existing:
+            conn.close()
+            flash('You have already submitted this assignment', 'error')
+            return redirect(url_for('student_dashboard'))
+        if past_due:
+            conn.close()
+            flash('The deadline for this assignment has passed', 'error')
+            return redirect(url_for('student_dashboard'))
+
+        file = request.files.get('file')
+        if not file or file.filename == '':
+            conn.close()
+            flash('Please choose a file to upload', 'error')
+            return redirect(request.url)
+        if not allowed_file(file.filename):
+            conn.close()
+            flash('File type not allowed. Use: ' + ', '.join(sorted(ALLOWED_EXTENSIONS)), 'error')
+            return redirect(request.url)
+
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        stored_name = f"{assignment_id}_{session['user_id']}_{timestamp}_{secure_filename(file.filename)}"
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], stored_name))
+
+        submitted_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        conn.execute("""
+            INSERT INTO submissions (assignment_id, student_id, file_path, submitted_at)
+            VALUES (?, ?, ?, ?)
+        """, (assignment_id, session['user_id'], stored_name, submitted_at))
+        conn.commit()
+        conn.close()
+        flash('Assignment submitted successfully!', 'success')
+        return redirect(url_for('student_dashboard'))
+
+    conn.close()
+    return render_template('submit_assignment.html', assignment=assignment,
+                           already_submitted=bool(existing), past_due=past_due,
+                           allowed_extensions=sorted(ALLOWED_EXTENSIONS))
+
+    @app.route('/logout')
 def logout():
     session.clear()
     flash('Logged out successfully', 'success')

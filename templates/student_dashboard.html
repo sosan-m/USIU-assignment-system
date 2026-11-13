@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Student Dashboard - USIU Assignment System{% endblock %}
+{% block content %}
+<div class="card">
+    <div class="card-header">My Assignments</div>
+    {% if assignments %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Course</th>
+                <th>Assignment</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Grade</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in assignments %}
+            <tr>
+                <td>{{ a.course_code }}<br><small>{{ a.course_name }}</small></td>
+                <td>
+                    <strong>{{ a.title }}</strong><br>
+                    <small>{{ a.description }}</small>
+                </td>
+                <td>{{ a.due_date }}</td>
+                <td>
+                    {% if a.submission_id %}
+                        <span class="badge badge-success">Submitted</span><br>
+                        <small>{{ a.submitted_at }}</small>
+                    {% elif a.is_overdue %}
+                        <span class="badge badge-danger">Overdue</span>
+                    {% else %}
+                        <span class="badge badge-warning">Pending</span>
+                    {% endif %}
+                </td>
+                <td>{% if a.grade is not none %}{{ a.grade }} / {{ a.total_marks }}{% else %}&mdash;{% endif %}</td>
+                <td>
+                    {% if not a.submission_id and not a.is_overdue %}
+                        <a href="{{ url_for('submit_assignment', assignment_id=a.id) }}" class="btn btn-primary">Submit</a>
+                    {% else %}
+                        &mdash;
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <p>No assignments have been posted yet.</p>
+    {% endif %}
+</div>
+{% endblock %}
