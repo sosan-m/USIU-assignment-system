@@ -154,3 +154,124 @@ footer {
     margin-top: 3rem;
     border-top: 4px solid #F2A900;
 }
+
+/* Lecturer Dashboard */
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    color: white;
+    gap: 20px;
+}
+
+.dashboard-header h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-header p {
+    font-size: 1.1rem;
+    margin-bottom: 0.4rem;
+}
+
+.dashboard-header span {
+    color: #CBD5E0;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.dashboard-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    border-top: 4px solid #F2A900;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+
+.dashboard-card h3 {
+    color: #002D62;
+    font-size: 1rem;
+}
+
+.dashboard-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #002D62;
+    margin: 1rem 0 0.3rem;
+}
+
+.dashboard-card span {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.course-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.course-item {
+    background: #EDF2F7;
+    padding: 1.2rem;
+    border-radius: 7px;
+    border-left: 4px solid #F2A900;
+}
+
+.course-item h3 {
+    color: #002D62;
+    margin-bottom: 0.5rem;
+}
+
+.course-item p {
+    margin-bottom: 0.5rem;
+}
+
+.course-item small {
+    color: #718096;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th {
+    background: #002D62;
+    color: white;
+    padding: 14px;
+    text-align: left;
+}
+
+td {
+    padding: 14px;
+    border-bottom: 1px solid #EDF2F7;
+}
+
+.empty-message {
+    color: #718096;
+    padding: 1rem 0;
+}
+
+@media (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

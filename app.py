@@ -376,6 +376,187 @@ def logout():
     flash('Logged out successfully', 'success')
     return redirect(url_for('index'))
 
+@app.route('/lecturer/dashboard')
+def instructor_dashboard():
+
+
+    if 'user_id' not in session or session.get('role') != 'instructor':
+        flash('Please log in as a lecturer.', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db()
+
+    courses = conn.execute(
+        'SELECT * FROM courses WHERE instructor_id = ?',
+        (session['user_id'],)
+    ).fetchall()
+
+    assignments = conn.execute('''
+        SELECT a.*, c.course_code,
+        COUNT(s.id) AS submission_count
+        FROM assignments a
+        JOIN courses c ON a.course_id = c.id
+        LEFT JOIN submissions s ON a.id = s.assignment_id
+        WHERE c.instructor_id = ?
+        GROUP BY a.id
+        ORDER BY a.created_at DESC
+    ''', (session['user_id'],)).fetchall()
+
+    conn.close()
+
+    return render_template(
+        'lecturer_dashboard.html',
+        courses=courses,
+        assignments=assignments
+    )
+
+@app.route('/lecturer/assignments/create', methods=['GET', 'POST'])
+def create_assignment():
+    if 'user_id' not in session or session.get('role') != 'instructor':
+        flash('Please log in as a lecturer.', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db()
+
+    courses = conn.execute(
+        'SELECT * FROM courses WHERE instructor_id = ?',
+        (session['user_id'],)
+    ).fetchall()
+
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        course_id = request.form['course_id']
+        due_date = request.form['due_date']
+        total_marks = request.form['total_marks']
+
+        course = conn.execute(
+            'SELECT id FROM courses WHERE id = ? AND instructor_id = ?',
+            (course_id, session['user_id'])
+        ).fetchone()
+
+        if not course:
+            conn.close()
+            flash('Please select a valid course.', 'error')
+            return redirect(url_for('create_assignment'))
+
+        conn.execute('''
+            INSERT INTO assignments
+            (title, description, course_id, due_date, total_marks)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (title, description, course_id, due_date, total_marks))
+
+        conn.commit()
+        conn.close()
+
+        flash('Assignment created successfully!', 'success')
+        return redirect(url_for('instructor_dashboard'))
+
+    conn.close()
+
+    return render_template(
+        'create_assignment.html',
+        courses=courses
+    )
+
+@app.route('/lecturer/assignments/<int:assignment_id>/submissions')
+def view_submissions(assignment_id):
+
+    if 'user_id' not in session or session.get('role') != 'instructor':
+        flash('Please log in as a lecturer.', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db()
+
+    # Check that this assignment belongs to the logged-in lecturer
+    assignment = conn.execute('''
+        SELECT a.*, c.course_code, c.course_name
+        FROM assignments a
+        JOIN courses c ON a.course_id = c.id
+        WHERE a.id = ? AND c.instructor_id = ?
+    ''', (assignment_id, session['user_id'])).fetchone()
+
+    if not assignment:
+        conn.close()
+        flash('Assignment not found.', 'error')
+        return redirect(url_for('instructor_dashboard'))
+
+    # Retrieve submissions for this assignment
+    submissions = conn.execute('''
+        SELECT s.*, u.full_name, u.student_id, u.email
+        FROM submissions s
+        JOIN users u ON s.student_id = u.id
+        WHERE s.assignment_id = ?
+        ORDER BY s.submitted_at DESC
+    ''', (assignment_id,)).fetchall()
+
+    conn.close()
+
+    return render_template(
+        'view_submissions.html',
+        assignment=assignment,
+        submissions=submissions
+    )
+
+@app.route('/lecturer/submissions/<int:submission_id>/grade', methods=['GET', 'POST'])
+def grade_submission(submission_id):
+
+    if 'user_id' not in session or session.get('role') != 'instructor':
+        flash('Please log in as a lecturer.', 'error')
+        return redirect(url_for('login'))
+
+    conn = get_db()
+
+    submission = conn.execute('''
+        SELECT s.*, u.full_name, u.student_id, u.email,
+               a.title, a.total_marks, a.id AS assignment_id,
+               c.course_code
+        FROM submissions s
+        JOIN users u ON s.student_id = u.id
+        JOIN assignments a ON s.assignment_id = a.id
+        JOIN courses c ON a.course_id = c.id
+        WHERE s.id = ? AND c.instructor_id = ?
+    ''', (submission_id, session['user_id'])).fetchone()
+
+    if not submission:
+        conn.close()
+        flash('Submission not found.', 'error')
+        return redirect(url_for('instructor_dashboard'))
+
+    if request.method == 'POST':
+        try:
+            grade = int(request.form['grade'])
+            feedback = request.form.get('feedback', '')
+
+            if grade < 0 or grade > submission['total_marks']:
+                flash('Grade must be within the assignment marks.', 'error')
+            else:
+                conn.execute('''
+                    UPDATE submissions
+                    SET grade = ?, feedback = ?, status = 'graded'
+                    WHERE id = ?
+                ''', (grade, feedback, submission_id))
+
+                conn.commit()
+                conn.close()
+
+                flash('Grade saved successfully!', 'success')
+                return redirect(url_for(
+                    'view_submissions',
+                    assignment_id=submission['assignment_id']
+                ))
+
+        except ValueError:
+            flash('Please enter a valid grade.', 'error')
+
+    conn.close()
+
+    return render_template(
+        'grade_submission.html',
+        submission=submission
+    )
+    
+
 if __name__ == '__main__':
     init_db()
     app.run(debug=True, host='0.0.0.0', port=5000)

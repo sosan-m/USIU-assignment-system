@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Grade Submission - USIU-Africa{% endblock %}
+
+{% block content %}
+
+<div class="card">
+
+    <div class="card-header">Grade Student Submission</div>
+
+    <h3>{{ submission.title }}</h3>
+
+    <p><strong>Course:</strong> {{ submission.course_code }}</p>
+    <p><strong>Student:</strong> {{ submission.full_name }}</p>
+    <p><strong>Student ID:</strong> {{ submission.student_id or 'N/A' }}</p>
+    <p><strong>Email:</strong> {{ submission.email }}</p>
+    <p><strong>Submitted:</strong> {{ submission.submitted_at }}</p>
+
+    <br>
+
+    <form method="POST">
+
+        <div class="form-group">
+            <label>Grade (out of {{ submission.total_marks }})</label>
+
+            <input
+                type="number"
+                name="grade"
+                min="0"
+                max="{{ submission.total_marks }}"
+                value="{{ submission.grade if submission.grade is not none else '' }}"
+                required>
+        </div>
+
+        <div class="form-group">
+            <label>Feedback</label>
+
+            <textarea
+                name="feedback"
+                rows="5"
+                placeholder="Enter feedback for the student">{{ submission.feedback or '' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            Save Grade
+        </button>
+
+        <a href="{{ url_for('view_submissions', assignment_id=submission.assignment_id) }}"
+           class="btn btn-secondary">
+            Cancel
+        </a>
+
+    </form>
+
+</div>
+
+{% endblock %}
