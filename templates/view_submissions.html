@@ -40,7 +40,12 @@
                         {{ submission.grade if submission.grade is not none else 'Not graded' }}
                     </td>
 
-                    <td>
+                   <td>
+    <a href="{{ url_for('view_submission_file', submission_id=submission.id) }}"
+       class="btn btn-primary" target="_blank">
+        View Submission
+    </a>
+
     <a href="{{ url_for('grade_submission', submission_id=submission.id) }}"
        class="btn btn-primary">
         Grade
