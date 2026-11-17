@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Create Course - BUPH Assignment System{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px; margin: 2rem auto;">
+    <div class="card-header">📚 Create New Course</div>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="course_code">Course Code</label>
+            <input type="text" id="course_code" name="course_code" required placeholder="e.g., CS101">
+        </div>
+        
+        <div class="form-group">
+            <label for="course_name">Course Name</label>
+            <input type="text" id="course_name" name="course_name" required placeholder="e.g., Introduction to Computer Science">
+        </div>
+        
+        <div class="form-group">
+            <label for="department">Department</label>
+            <input type="text" id="department" name="department" required placeholder="e.g., Computer Science">
+        </div>
+        
+        <div class="form-group">
+            <label for="instructor_id">Assign Instructor (Optional)</label>
+            <select id="instructor_id" name="instructor_id">
+                <option value="">Select Instructor</option>
+                {% for instructor in instructors %}
+                <option value="{{ instructor.id }}">{{ instructor.full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn btn-success">Create Course</button>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

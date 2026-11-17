@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - BUPH Assignment System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <span>🔧 Admin Dashboard</span>
+        <a href="{{ url_for('create_course') }}" class="btn btn-primary">Create New Course</a>
+    </div>
+    
+    <h3 style="margin-bottom: 1rem; color: #667eea;">📊 System Statistics</h3>
+    <div class="dashboard-grid" style="margin-bottom: 2rem;">
+        <div class="stat-card">
+            <h3>{{ stats.total_students }}</h3>
+            <p>Total Students</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.total_instructors }}</h3>
+            <p>Total Instructors</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.total_courses }}</h3>
+            <p>Total Courses</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.total_assignments }}</h3>
+            <p>Total Assignments</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ stats.total_submissions }}</h3>
+            <p>Total Submissions</p>
+        </div>
+    </div>
+    
+    <h3 style="margin-bottom: 1rem; color: #667eea;">👥 Recent Users</h3>
+    {% if users %}
+        <table class="table" style="margin-bottom: 2rem;">
+            <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Department</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td><strong>{{ user.full_name }}</strong></td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        <span class="status-badge 
+                            {% if user.role == 'student' %}status-submitted
+                            {% elif user.role == 'instructor' %}status-graded
+                            {% else %}status-pending{% endif %}">
+                            {{ user.role }}
+                        </span>
+                    </td>
+                    <td>{{ user.department if user.department else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+    
+    <h3 style="margin-bottom: 1rem; color: #667eea;">📚 Recent Courses</h3>
+    {% if courses %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Course Code</th>
+                    <th>Course Name</th>
+                    <th>Department</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for course in courses %}
+                <tr>
+                    <td><strong>{{ course.course_code }}</strong></td>
+                    <td>{{ course.course_name }}</td>
+                    <td>{{ course.department }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="color: #666; text-align: center; padding: 2rem;">No courses created yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

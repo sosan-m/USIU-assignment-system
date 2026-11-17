@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Submit Assignment - USIU Assignment System{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 2rem auto;">
+    <div class="card-header">Submit: {{ assignment.title }}</div>
+    <p><strong>Course:</strong> {{ assignment.course_code }} - {{ assignment.course_name }}</p>
+    <p><strong>Due:</strong> {{ assignment.due_date }} &nbsp; <strong>Marks:</strong> {{ assignment.total_marks }}</p>
+    <p>{{ assignment.description }}</p>
+    <hr>
+
+    {% if already_submitted %}
+        <div class="alert alert-success">You have already submitted this assignment.</div>
+    {% elif past_due %}
+        <div class="alert alert-error">The deadline for this assignment has passed.</div>
+    {% else %}
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file">Upload your work ({{ allowed_extensions | join(', ') }} &mdash; max 16MB)</label>
+            <input type="file" id="file" name="file" accept="{% for e in allowed_extensions %}.{{ e }}{% if not loop.last %},{% endif %}{% endfor %}" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Assignment</button>
+    </form>
+    {% endif %}
+
+    <p style="margin-top: 1rem;"><a href="{{ url_for('student_dashboard') }}">&larr; Back to dashboard</a></p>
+</div>
+{% endblock %}
