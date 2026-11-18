@@ -299,6 +299,66 @@ def submit_assignment(assignment_id):
                            allowed_extensions=sorted(ALLOWED_EXTENSIONS))
 
 
+@app.route('/student/edit/<int:assignment_id>', methods=['GET', 'POST'])
+@student_required
+def edit_submission(assignment_id):
+    """Change request: let a student replace their submission before the deadline."""
+    conn = get_db()
+    assignment = conn.execute("""
+        SELECT a.*, c.course_code, c.course_name
+        FROM assignments a JOIN courses c ON a.course_id = c.id
+        WHERE a.id = ?
+    """, (assignment_id,)).fetchone()
+    submission = conn.execute(
+        'SELECT * FROM submissions WHERE assignment_id = ? AND student_id = ?',
+        (assignment_id, session['user_id'])
+    ).fetchone()
+
+    if not assignment or not submission:
+        conn.close()
+        flash('No submission found to edit', 'error')
+        return redirect(url_for('student_dashboard'))
+
+    due = parse_due_date(assignment['due_date'])
+    if due and datetime.now() > due:
+        conn.close()
+        flash('The deadline has passed, so this submission can no longer be edited', 'error')
+        return redirect(url_for('student_dashboard'))
+
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if not file or file.filename == '':
+            conn.close()
+            flash('Please choose a file to upload', 'error')
+            return redirect(request.url)
+        if not allowed_file(file.filename):
+            conn.close()
+            flash('File type not allowed. Use: ' + ', '.join(sorted(ALLOWED_EXTENSIONS)), 'error')
+            return redirect(request.url)
+
+        timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+        stored_name = f"{assignment_id}_{session['user_id']}_{timestamp}_{secure_filename(file.filename)}"
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], stored_name))
+
+        # Remove the old file so only the latest version is kept
+        old_path = os.path.join(app.config['UPLOAD_FOLDER'], submission['file_path'])
+        if os.path.exists(old_path):
+            os.remove(old_path)
+
+        conn.execute("""
+            UPDATE submissions SET file_path = ?, submitted_at = ?
+            WHERE id = ?
+        """, (stored_name, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), submission['id']))
+        conn.commit()
+        conn.close()
+        flash('Submission updated successfully!', 'success')
+        return redirect(url_for('student_dashboard'))
+
+    conn.close()
+    return render_template('edit_submission.html', assignment=assignment,
+                           submission=submission,
+                           allowed_extensions=sorted(ALLOWED_EXTENSIONS))
+
 # --- Lecturer / Instructor Routes ---
 
 @app.route('/lecturer/dashboard')

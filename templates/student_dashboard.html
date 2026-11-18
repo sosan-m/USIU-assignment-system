@@ -38,6 +38,8 @@
                 <td>
                     {% if not a.submission_id and not a.is_overdue %}
                         <a href="{{ url_for('submit_assignment', assignment_id=a.id) }}" class="btn btn-primary">Submit</a>
+                    {% elif a.submission_id and not a.is_overdue %}
+                        <a href="{{ url_for('edit_submission', assignment_id=a.id) }}" class="btn btn-secondary">Edit</a>
                     {% else %}
                         &mdash;
                     {% endif %}
